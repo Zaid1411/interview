@@ -1,4 +1,14 @@
-const API_BASE = '/api';
+const getApiBase = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return '/api';
+  const trimmed = envUrl.trim().replace(/\/$/, '');
+  const urlWithProtocol = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+    ? trimmed
+    : `https://${trimmed}`;
+  return urlWithProtocol.endsWith('/api') ? urlWithProtocol : `${urlWithProtocol}/api`;
+};
+
+const API_BASE = getApiBase();
 
 export class ApiError extends Error {
   statusCode: number;

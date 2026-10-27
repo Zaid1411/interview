@@ -6,6 +6,12 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seeding...');
 
+  const existingCount = await prisma.question.count();
+  if (existingCount >= 18 && process.env.NODE_ENV === 'production') {
+    console.log(`✅ Production database already initialized with ${existingCount} questions. Skipping seed.`);
+    return;
+  }
+
   // Clean existing data for clean seed
   await prisma.codeDraft.deleteMany();
   await prisma.submission.deleteMany();

@@ -3,9 +3,9 @@ services:
   - type: web
     name: interviewlab-api
     env: node
-    plan: starter
+    plan: free
     region: oregon
-    buildCommand: cd server && npm install && npm run prisma:generate && npm run prisma:deploy && npm run build
+    buildCommand: cd server && npm install && npm run prisma:generate && npm run prisma:push && npm run seed && npm run build
     startCommand: cd server && npm run start
     envVars:
       - key: NODE_ENV
