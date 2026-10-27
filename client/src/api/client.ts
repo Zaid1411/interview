@@ -1,5 +1,5 @@
 const getApiBase = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
   if (!envUrl) return '/api';
   const trimmed = envUrl.trim().replace(/\/$/, '');
   const urlWithProtocol = trimmed.startsWith('http://') || trimmed.startsWith('https://')
