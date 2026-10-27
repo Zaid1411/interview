@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String             @id @default(uuid())
+  email                String             @unique
+  passwordHash         String
+  name                 String
+  avatarUrl            String?
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  submissions          Submission[]
+  interviewSessions    InterviewSession[]
+  codeDrafts           CodeDraft[]
+}
+
+model Question {
+  id                 String              @id @default(uuid())
+  slug               String              @unique
+  title              String
+  difficulty         String              // Easy, Medium, Hard
+  topics             String[]            // e.g. ["Arrays", "Two Pointers"]
+  description        String              @db.Text
+  inputFormat        String              @db.Text
+  outputFormat       String              @db.Text
+  constraints        String              @db.Text
+  examples           Json                // [{ input, output, explanation }]
+  starterCode        Json                // { javascript, python }
+  hints              String[]
+  editorial          String              @db.Text
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  testCases          TestCase[]
+  submissions        Submission[]
+  interviewQuestions InterviewQuestion[]
+  codeDrafts         CodeDraft[]
+}
+
+model TestCase {
+  id             String   @id @default(uuid())
+  questionId     String
+  input          String   @db.Text
+  expectedOutput String   @db.Text
+  isHidden       Boolean  @default(false)
+  orderIndex     Int      @default(0)
+
+  question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model Submission {
+  id                 String            @id @default(uuid())
+  userId             String
+  questionId         String
+  interviewSessionId String?
+  language           String
+  code               String            @db.Text
+  status             String            // PASSED, FAILED, RUNTIME_ERROR, TIME_LIMIT_EXCEEDED, COMPILE_ERROR
+  passedTests        Int
+  totalTests         Int
+  executionTimeMs    Float?
+  memoryKb           Float?
+  error              String?           @db.Text
+  details            Json?             // Array of safe test execution feedback
+  createdAt          DateTime          @default(now())
+
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question           Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  interviewSession   InterviewSession? @relation(fields: [interviewSessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([questionId])
+  @@index([interviewSessionId])
+}
+
+model InterviewSession {
+  id              String              @id @default(uuid())
+  userId          String
+  title           String
+  durationMinutes Int
+  difficulty      String?             // Easy, Medium, Hard, Mixed
+  topics          String[]
+  status          String              @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, EXPIRED
+  startTime       DateTime            @default(now())
+  expiresAt       DateTime
+  completedAt     DateTime?
+  score           Float               @default(0)
+  totalQuestions  Int
+  solvedQuestions Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions       InterviewQuestion[]
+  submissions     Submission[]
+
+  @@index([userId])
+}
+
+model InterviewQuestion {
+  id         String           @id @default(uuid())
+  sessionId  String
+  questionId String
+  orderIndex Int
+  isSolved   Boolean          @default(false)
+  solvedAt   DateTime?
+
+  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question   Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+}
+
+model CodeDraft {
+  id                 String   @id @default(uuid())
+  userId             String
+  questionId         String
+  interviewSessionId String?
+  language           String
+  code               String   @db.Text
+  updatedAt          DateTime @updatedAt
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question           Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId, interviewSessionId, language])
+  @@index([userId, questionId])
+}
